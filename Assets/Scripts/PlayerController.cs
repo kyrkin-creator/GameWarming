@@ -1,3 +1,4 @@
+using Mono.Cecil;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -24,9 +25,12 @@ public class PlayerController : MonoBehaviour
     private float _currentSpeed;
     private bool _isSprinting;
     private bool _canRegenStamina = true;
+    private bool IsFlashlightLightOn = false;
     
     public static bool hasKey = false;
     
+    [SerializeField] private GameObject flashlightLight;
+
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundCheckRadius = 0.2f;
     [SerializeField] private LayerMask groundLayer;
@@ -129,6 +133,12 @@ public class PlayerController : MonoBehaviour
     public void OnMove(InputValue val)
     {
         _move = val.Get<Vector2>();
+    }
+
+    public void OnFlashlight(InputValue val)
+    {
+        IsFlashlightLightOn = !IsFlashlightLightOn;
+        flashlightLight.SetActive(!IsFlashlightLightOn);
     }
     
     public void OnSprint(InputValue val)

@@ -361,6 +361,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 353694761567940114}
+  - component: {fileID: 305210317119635082}
   m_Layer: 0
   m_Name: DoorCorridorPrefab
   m_TagString: Untagged
@@ -392,6 +393,20 @@ Transform:
   - {fileID: 5432801806372200932}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &305210317119635082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1025974382005116361}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cf8c9a29816364e45b675150bd75520f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rooms
+  startPoint: {fileID: 7117875187907770193}
+  endPoint: {fileID: 6657090390000776746}
 --- !u!1 &1629744516079513080
 GameObject:
   m_ObjectHideFlags: 0
@@ -402,7 +417,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7117875187907770193}
   m_Layer: 0
-  m_Name: DoorExit
+  m_Name: StartPoint
   m_TagString: Untagged
   m_Icon: {fileID: -5442936267250999957, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
@@ -416,9 +431,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1629744516079513080}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.5003228, y: -0.499677, z: -0.499677, w: 0.5003228}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 1.002, y: -1.3297896, z: -1.1988697}
-  m_LocalScale: {x: 35, y: 40, z: 35}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 353694761567940114}
@@ -1838,7 +1853,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6657090390000776746}
   m_Layer: 0
-  m_Name: DoorEntry
+  m_Name: EndPoint
   m_TagString: Untagged
   m_Icon: {fileID: -5397416234189338067, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0

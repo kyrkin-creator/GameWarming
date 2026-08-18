@@ -1,6 +1,7 @@
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 public class Raycast : MonoBehaviour
 {
@@ -11,15 +12,16 @@ public class Raycast : MonoBehaviour
     public bool pressE = false;
     private GameObject currentTarget;  
     private Outline currentOutline;
-    private Interactable currentInteractable; // Добавляем ссылку на компонент Interactable
+    private Interactable currentInteractable;
 
     public bool _doorOpenAnimation = false;
 
     [SerializeField] private Animator doorAnimator;
-
     [SerializeField] private string openTrigger = "Open";
-
     public string CloseDoorText;
+
+    // Добавляем переменную для отслеживания нажатия
+    private bool isInteracting = false;
 
     void Start()
     {
@@ -36,45 +38,49 @@ public class Raycast : MonoBehaviour
     {
         RayCast_Information();
         
-        if (pressE && Input.GetKeyDown(KeyCode.E))
+        // Ловим нажатие в любом случае
+        if (Input.GetKeyDown(KeyCode.E))
         {
             InteractWithCurrentTarget();
         }
     }
     
-private void RayCast_Information()
-{
-    Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width/2, Screen.height/2, 0));
-    RaycastHit hit;
-
-    if(Physics.Raycast(ray, out hit, range, layerMask))
+    private void RayCast_Information()
     {
-        GameObject hitObject = hit.collider.gameObject;
-        Outline outline = hitObject.GetComponent<Outline>();
-        Interactable interactable = hitObject.GetComponent<Interactable>();
+        Ray ray = mainCamera.ScreenPointToRay(new Vector3(Screen.width/2, Screen.height/2, 0));
+        RaycastHit hit;
 
-        if (outline != null)
+        if(Physics.Raycast(ray, out hit, range, layerMask))
         {
+            GameObject hitObject = hit.collider.gameObject;
+            Outline outline = hitObject.GetComponent<Outline>();
+            Interactable interactable = hitObject.GetComponent<Interactable>();
+
             if(currentTarget != hitObject)
             {
-                if(currentTarget != null)
+                // Сбрасываем старый Outline
+                if(currentOutline != null)
                 {
                     currentOutline.enabled = false;
+                    currentOutline = null;
                 }
 
                 currentTarget = hitObject;
-                currentOutline = outline;
                 currentInteractable = interactable;
-                currentOutline.enabled = true;
                 pressE = true;
                 
-                // Показываем текст в UI
+                // Включаем новый Outline
+                if(outline != null)
+                {
+                    currentOutline = outline;
+                    currentOutline.enabled = true;
+                }
+                
+                // Показываем текст
                 if (InteractionUI.Instance != null && currentInteractable != null)
                 {
-                    // Для двери текст может меняться в зависимости от состояния
                     string textToShow = currentInteractable.interactionText;
                     
-                    // Если это дверь и она заперта, показываем специальный текст
                     if (currentInteractable.itemType == Interactable.ItemType.Door && currentInteractable.isLocked)
                     {
                         textToShow = CloseDoorText;
@@ -85,48 +91,65 @@ private void RayCast_Information()
             }
             return;
         }
-    }
 
-    if(currentTarget != null)
-    {
-        currentOutline.enabled = false;
-        currentTarget = null;
-        currentOutline = null;
-        currentInteractable = null;
-        pressE = false;
-        
-        // Скрываем UI текст
-        if (InteractionUI.Instance != null)
-            InteractionUI.Instance.HideText();
-    }
+        // Если ничего не нашли
+        if(currentTarget != null)
+        {
+            if(currentOutline != null)
+            {
+                currentOutline.enabled = false;
+                currentOutline = null;
+            }
+            currentTarget = null;
+            currentInteractable = null;
+            pressE = false;
+            
+            if (InteractionUI.Instance != null)
+                InteractionUI.Instance.HideText();
+        }
 
-    Debug.DrawRay(ray.origin, ray.direction*range, Color.red);
-}
+        Debug.DrawRay(ray.origin, ray.direction*range, Color.red);
+    }
     
     private void InteractWithCurrentTarget()
     {
-        if (currentTarget != null && currentInteractable != null)
+        // Проверяем, есть ли цель и не взаимодействуем ли уже
+        if (currentTarget == null || currentInteractable == null)
         {
+            Debug.Log("Нет цели для взаимодействия");
+            return;
+        }
+        
+        // Предотвращаем множественное взаимодействие
+        if (isInteracting) return;
+        isInteracting = true;
+
+        try
+        {
+            // Сохраняем ссылки локально, чтобы они не сбросились во время взаимодействия
+            GameObject target = currentTarget;
+            Interactable interactable = currentInteractable;
+            Outline outline = currentOutline;
+            
             // Обрабатываем разные типы предметов
-            switch (currentInteractable.itemType)
+            switch (interactable.itemType)
             {
                 case Interactable.ItemType.Key:
-                    // Подбираем ключ
-                    PlayerInventory.Instance.AddKey(currentInteractable.itemID);
-                    Destroy(currentTarget);
+                    if (PlayerInventory.Instance != null)
+                    {
+                        PlayerInventory.Instance.AddKey(interactable.itemID);
+                        Destroy(target);
+                    }
                     break;
                     
                 case Interactable.ItemType.Door:
-                    // Проверяем дверь
-                    if (currentInteractable.isLocked)
+                    if (interactable.isLocked)
                     {
-                        if (PlayerInventory.Instance.HasKey(currentInteractable.requiredKeyID))
+                        if (PlayerInventory.Instance != null && PlayerInventory.Instance.HasKey(interactable.requiredKeyID))
                         {
                             Debug.Log("Дверь открыта!");
-                            currentInteractable.isLocked = false;
-                            currentInteractable.Interact(); 
-
-
+                            interactable.isLocked = false;
+                            interactable.Interact();
                             
                             if (InteractionUI.Instance != null)
                                 InteractionUI.Instance.ShowText("Open door");
@@ -135,42 +158,39 @@ private void RayCast_Information()
                         {
                             Debug.Log("Дверь заперта! Нужен ключ.");
                             if (InteractionUI.Instance != null)
-                                InteractionUI.Instance.ShowText("Нужен ключ!");
+                                InteractionUI.Instance.ShowTempMessage("Нужен ключ!", 1.5f);
+                            return; // Выходим, не сбрасывая цель
                         }
                     }
                     else
                     {
-                        currentInteractable.Interact();
+                        interactable.Interact();
                     }
                     break;
                     
                 default:
-                    currentInteractable.Interact();
+                    interactable.Interact();
                     break;
             }
             
-            // Сбрасываем после взаимодействия
-            currentOutline.enabled = false;
+            // Сбрасываем только если взаимодействие успешно (кроме случая с запертой дверью)
+            if (outline != null)
+            {
+                outline.enabled = false;
+            }
+            
             currentTarget = null;
-            currentOutline = null;
             currentInteractable = null;
+            currentOutline = null;
             pressE = false;
             
             if (InteractionUI.Instance != null)
                 InteractionUI.Instance.HideText();
         }
+        finally
+        {
+            // Разрешаем следующее взаимодействие
+            isInteracting = false;
+        }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
