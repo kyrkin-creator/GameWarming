@@ -37,11 +37,11 @@ public class FreezeOverlay : MonoBehaviour
     private void Update()
     {
         // Проверка наличия FreezeSystem
-        if (FreezeSystem.Instance == null)
-        {
-            Debug.LogWarning("FreezeOverlay: FreezeSystem не найден!");
-            return;
-        }
+//        if (FreezeSystem.Instance == null)
+//        {
+//            Debug.LogWarning("FreezeOverlay: FreezeSystem не найден!");
+//            return;
+//        }
         
         if (_freezeImage == null)
             return;

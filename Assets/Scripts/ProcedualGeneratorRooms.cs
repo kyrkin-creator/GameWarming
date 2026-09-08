@@ -4,21 +4,37 @@ using UnityEngine;
 public class ProcedualGeneratorRooms : MonoBehaviour
 {
     [SerializeField] public GameObject player_;
-    
-    [Header("Rooms")]
+
+    [Header("ItemGenerator")]
+    [SerializeField] public ItemGenerator itemGenerator;
+
+    [Header("1st floor 'Rooms' ")]
     public Rooms[] roomsPrefabs;
-    private List<Rooms> generatedRooms = new List<Rooms>();
+    public List<Rooms> generatedRooms = new List<Rooms>();
     
-    [SerializeField] private Transform startRoomStartPoint; // Исправлено имя
-    [SerializeField] private GameObject endRoomPrefab; // Переименовано для ясности
+    [SerializeField] private Transform startRoomStartPoint;
+    [SerializeField] private GameObject endRoomPrefab;
     private bool EndGenerated = false;
     
-    [Header("Generation Settings")]
-    [SerializeField] private int maxRooms = 10; // Лимит комнат для предотвращения бесконечного цикла
+    [Header("Generation Rooms Settings")]
+    [SerializeField] private int maxRooms = 10;
+
+    [Header("2nd floor 'Forest' ")]
+    [SerializeField] private GameObject forestMap;
+
+    [Header(" 'The Fog Settings' ")]
+    public bool isTheFog = false;
+    public float theFogStart = 2f;    
+    public float theFogEnd = 15f;
+   // public float theFogColor = 606060;
+
+
 
     void Awake()
     {
         GenerateRooms();
+        RenderSettings.fog = isTheFog; // off/on theFog
+        SpawnFloorTwo();
     }
 
     public void GenerateRooms()
@@ -27,13 +43,15 @@ public class ProcedualGeneratorRooms : MonoBehaviour
         Rooms startRoom = Instantiate(roomsPrefabs[0], startRoomStartPoint.position, Quaternion.identity);
         generatedRooms.Add(startRoom);
         
-        // Генерируем комнаты пока не достигнут лимит или не создана конечная комната
+        // Генерируем комнаты
         int attempts = 0;
-        while (!EndGenerated && generatedRooms.Count < maxRooms && attempts < 100)
+        bool endRoomSpawned = false;
+        
+        while (!endRoomSpawned && generatedRooms.Count < maxRooms && attempts < 100)
         {
             attempts++;
             
-            // Выбираем случайную комнату из доступных префабов
+            // Выбираем случайную комнату
             int randomIndex = Random.Range(0, roomsPrefabs.Length);
             Rooms newRoomPrefab = roomsPrefabs[randomIndex];
             
@@ -48,6 +66,7 @@ public class ProcedualGeneratorRooms : MonoBehaviour
             // Проверяем, является ли комната конечной
             if (newRoom.IsEndRoom)
             {
+                endRoomSpawned = true;
                 EndGenerated = true;
             }
             
@@ -55,13 +74,120 @@ public class ProcedualGeneratorRooms : MonoBehaviour
             Debug.Log($"Сгенерирована комната #{generatedRooms.Count}. Конечная: {newRoom.IsEndRoom}");
         }
         
-        if (EndGenerated)
+        // Если конечная комната не была заспавнена, создаем её принудительно
+        if (!endRoomSpawned)
         {
-            Debug.Log($"Генерация завершена! Создано {generatedRooms.Count} комнат.");
+            Debug.Log("Конечная комната не найдена. Создаем принудительно...");
+            SpawnEndRoom();
         }
-        else
+        
+        Debug.Log($"Генерация завершена! Создано {generatedRooms.Count} комнат.");
+    }
+    
+    void SpawnEndRoom()
+    {
+        // Находим префаб конечной комнаты
+        Rooms endRoomPrefab = null;
+        
+        foreach (Rooms room in roomsPrefabs)
         {
-            Debug.LogWarning($"Достигнут лимит комнат ({maxRooms}) или превышено количество попыток.");
+            if (room.IsEndRoom)
+            {
+                endRoomPrefab = room;
+                break;
+            }
         }
+        
+        // Если префаб конечной комнаты не найден, создаем из endRoomPrefab (переменная в инспекторе)
+        if (endRoomPrefab == null && this.endRoomPrefab != null)
+        {
+            endRoomPrefab = this.endRoomPrefab.GetComponent<Rooms>();
+        }
+        
+        // Если всё еще нет - создаем простую комнату и помечаем как конечную
+        if (endRoomPrefab == null)
+        {
+            Debug.LogWarning("Префаб конечной комнаты не найден! Создаем последнюю комнату как конечную.");
+            endRoomPrefab = roomsPrefabs[Random.Range(0, roomsPrefabs.Length)];
+            
+            // Создаем комнату
+            Rooms lastRoom = Instantiate(endRoomPrefab);
+            
+            // Позиционируем
+            Vector3 lastEndPoint = generatedRooms[generatedRooms.Count - 1].endPoint.position;
+            Vector3 offset = lastRoom.startPoint.localPosition;
+            lastRoom.transform.position = lastEndPoint - offset;
+            
+            // Помечаем как конечную (добавляем компонент если нужно)
+            lastRoom.IsEndRoom = true;
+            generatedRooms.Add(lastRoom);
+            
+            Debug.Log($"Создана принудительная конечная комната #{generatedRooms.Count}");
+            return;
+        }
+        
+        // Создаем конечную комнату из префаба
+        Rooms endRoom = Instantiate(endRoomPrefab);
+        
+        // Позиционируем
+        Vector3 lastPoint = generatedRooms[generatedRooms.Count - 1].endPoint.position;
+        Vector3 endOffset = endRoom.startPoint.localPosition;
+        endRoom.transform.position = lastPoint - endOffset;
+        
+        // Помечаем как конечную (на всякий случай)
+        endRoom.IsEndRoom = true;
+        EndGenerated = true;
+        
+        generatedRooms.Add(endRoom);
+        Debug.Log($"Создана конечная комната #{generatedRooms.Count}");
+    }
+
+
+    public void ClearAllRooms()
+    {
+        if (generatedRooms == null || generatedRooms.Count == 0)
+        {
+            Debug.Log("Нет комнат для удаления");
+            return;
+        }
+
+        Debug.Log($"Начинаем удаление {generatedRooms.Count} комнат...");
+        
+        // Сохраняем список для удаления (чтобы избежать проблем с изменением коллекции)
+        List<Rooms> roomsToDelete = new List<Rooms>(generatedRooms);
+        
+        foreach (Rooms room in roomsToDelete)
+        {
+            if (room != null && room.gameObject != null)
+            {
+                // Если у комнаты есть дети с точками спавна, они удалятся вместе с ней
+                Destroy(room.gameObject);
+            }
+        }
+        
+        // Очищаем список
+        generatedRooms.Clear();
+        
+        // Сбрасываем флаги
+        EndGenerated = false;
+        
+        Debug.Log("Все комнаты удалены!");
+    }
+
+
+    void EnterTheFogSettings()
+    {
+        RenderSettings.fog = true;
+        RenderSettings.fogStartDistance = theFogStart;
+        RenderSettings.fogEndDistance = theFogEnd;
+       // RenderSettings.fogColor = theFogColor;   
+    }
+
+    public void SpawnFloorTwo()
+    {
+        ClearAllRooms();
+        forestMap.SetActive(true);
+        EnterTheFogSettings();
+        //itemGenerator.ClearAllItems();
     }
 }

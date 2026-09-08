@@ -4,6 +4,7 @@ using UnityEngine;
 public class PlayerInventory : MonoBehaviour
 {
     public static PlayerInventory Instance;
+    public StickUI stickUI;
     public float sticks = 0;
     public float sticksOnFire = 0;
     public Interactable interactable; // огонь как основа
@@ -13,7 +14,12 @@ public class PlayerInventory : MonoBehaviour
     public float intervalToBurnStick = 30f;
     
     private HashSet<string> keys = new HashSet<string>();
-    
+
+
+    [Header("Item Collection")]
+    public List<string> collectedItemIDs = new List<string>(); // ID собранных предметов
+
+
     void Awake()
     {
         if (Instance == null)
@@ -25,29 +31,45 @@ public class PlayerInventory : MonoBehaviour
     void Update()
     {
         if(sticksOnFire <= 0 && !canFire) return;
-
-        timerToBurnStick += Time.deltaTime;
-        if(timerToBurnStick >= intervalToBurnStick)
+        if(sticksOnFire >= 3 && canFire)
         {
-            timerToBurnStick = 0f;
-            BurnStickOnFire();
-            interactable.CreateStick();
+            timerToBurnStick += Time.deltaTime;
+            if(timerToBurnStick >= intervalToBurnStick)
+            {
+                timerToBurnStick = 0f;
+                BurnStickOnFire(); // fire in interactable ///////
+                if(sticksOnFire <= 3)
+                {
+                    interactable.DeleteFire();
+                }
+                interactable.CreateStick();
+            }
+        }
+
+    }
+    public void CollectItem(string itemID)
+    {
+        if (!collectedItemIDs.Contains(itemID))
+        {
+            collectedItemIDs.Add(itemID);
+            Debug.Log($"Предмет {itemID} добавлен в коллекцию");
         }
     }
-    
+    public bool HasCollectedItem(string itemID)
+    {
+        return collectedItemIDs.Contains(itemID);
+    }      
     public void AddKey(string keyID)
     {
         keys.Add(keyID);
+        CollectItem(keyID); // Добавляем в коллекцию
         Debug.Log($"Подобран ключ: {keyID}");
         
-        // Показываем уведомление через UI
         if (InteractionUI.Instance != null)
         {
-            InteractionUI.Instance.ShowText("Ключ подобран!");
-            Invoke("HideNotification", 2f);
+            InteractionUI.Instance.ShowTempMessage("Ключ подобран!", 2f);
         }
     }
-    
     void HideNotification()
     {
         if (InteractionUI.Instance != null)
@@ -62,8 +84,10 @@ public class PlayerInventory : MonoBehaviour
     public void AddStick()
     {
         sticks = sticks+1f;
+        stickUI.UpdateStickSum();
 
     }
+    
     public void SpendStickToFire()
     {
         if (sticks > 0)
@@ -90,5 +114,7 @@ public class PlayerInventory : MonoBehaviour
             sticksOnFire = sticksOnFire - priceStick;
         }
     }
+
+
 
 }

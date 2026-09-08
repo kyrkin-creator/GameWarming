@@ -15,6 +15,7 @@ public class Interactable : MonoBehaviour
         LightSwitch,
         Stick,
         Fire,
+        TrashDoor
     }
     
     public ItemType itemType = ItemType.Item;
@@ -33,6 +34,7 @@ public class Interactable : MonoBehaviour
 
     public Animator doorBakeAnimator;
     public Animator LightSwitchAnimator;
+    public Animator trashDoorAnimator;
 
     public bool isOpen = false;
     public bool isSwitchOn = false;
@@ -45,7 +47,8 @@ public class Interactable : MonoBehaviour
     public GameObject[] sticksArray; 
     
 
-    public bool isOpenDoorBake = false;
+    private bool isOpenDoorBake = false;
+    private bool isOpenTrashDoor = false;
     
     [Header("Door Settings")]
     public bool canClose = true;  // Можно ли закрыть дверь обратно
@@ -63,7 +66,7 @@ public class Interactable : MonoBehaviour
 
         FreezeSystem.Instance.SetWarmSpeed(0f);
         
-        fire.SetActive(false);
+        if(fire!=null) fire.SetActive(false);
         // Обновляем текст взаимодействия в зависимости от состояния двери
         UpdateInteractionText();
     }
@@ -112,10 +115,19 @@ public class Interactable : MonoBehaviour
             case ItemType.LightSwitch:
                 ToggleLightSwitch();
                 break;
-
-
+            case ItemType.Fire:
+                playerInventory.SpendStickToFire();
+                if(playerInventory.sticksOnFire >= 3){
+                    CreateFire();
+                }
+                CreateStick();
+                break;
             case ItemType.Stick:
                 Destroy(gameObject);
+                playerInventory.AddStick();
+                break;
+            case ItemType.TrashDoor:
+                ToggleTrashDoor();
                 break;
 
             default:
@@ -159,6 +171,19 @@ public class Interactable : MonoBehaviour
             doorBakeAnimator.SetBool("isOpenDoorBake", false);
         }
         
+    }
+    public void ToggleTrashDoor()
+    {
+        isOpenTrashDoor = !isOpenTrashDoor;
+        if (isOpenTrashDoor)
+        {
+            trashDoorAnimator.SetBool("isOpenTrashDoor", true);
+        }
+
+        if (!isOpenTrashDoor)
+        {
+            trashDoorAnimator.SetBool("isOpenTrashDoor", false);
+        }
     }
 
     public void ToggleLightSwitch()
@@ -235,12 +260,24 @@ public class Interactable : MonoBehaviour
     {
         FreezeSystem.Instance.SetWarmSpeed(0.3f);
         fire.SetActive(true);
-        smoke.SetActive(true);
+        if(smoke!=null) 
+        {
+            smoke.SetActive(true);
+        } 
         Debug.Log("Огонь Активен");
+        playerInventory.canFire = true;
+    }
+    public void DeleteFire()
+    {
+        FreezeSystem.Instance.SetWarmSpeed(0.1f);
+        fire.SetActive(false);
+        if(smoke!=null)
+        {
+            smoke.SetActive(true);
+        }
+        Debug.Log("Огонь неактивен");
         playerInventory.canFire = false;
     }
-
-
     public void CreateStick()
     {
         if (playerInventory.sticksOnFire >= 1)
