@@ -227,7 +227,7 @@ public class ItemGenerator : MonoBehaviour
         }
     }
     
-    void RemoveFloorItems(int floorLevel)
+    public void RemoveFloorItems(int floorLevel)
     {
         // Получаем точки на этаже
         List<ItemSpawnPoint> floorPoints = GetSpawnPointsForFloor(floorLevel);
@@ -254,19 +254,21 @@ public class ItemGenerator : MonoBehaviour
         foreach (GameObject item in toRemove)
         {
             spawnedItems.Remove(item);
-            DestroyImmediate(item);
+            Destroy(item);
         }
         
         // Сбрасываем точки
         ResetSpawnPoints(floorPoints);
+        ClearAllChildren();
     }
     
     public void ClearAllItems()
     {
+        ClearAllChildren();
         foreach (GameObject item in spawnedItems)
         {
             if (item != null)
-                DestroyImmediate(item);
+                Destroy(item);
         }
         spawnedItems.Clear();
         
@@ -331,6 +333,15 @@ public class ItemGenerator : MonoBehaviour
                     Debug.Log($"Найдено {spawnPoints.Length} точек по тегу {spawnPointTag}");
                 }
             }
+        }
+    }
+
+    void ClearAllChildren()
+    {
+        // Важно: идём с конца, т.к. коллекция изменяется при Destroy
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Destroy(transform.GetChild(i).gameObject);
         }
     }
     

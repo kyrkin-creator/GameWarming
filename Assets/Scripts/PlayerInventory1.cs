@@ -5,6 +5,10 @@ public class PlayerInventory : MonoBehaviour
 {
     public static PlayerInventory Instance;
     public StickUI stickUI;
+
+    public int fuel = 0;
+    public int fuelOnGenerator = 0;
+
     public float sticks = 0;
     public float sticksOnFire = 0;
     public Interactable interactable; // огонь как основа
@@ -81,13 +85,26 @@ public class PlayerInventory : MonoBehaviour
         return keys.Contains(keyID);
     }
 
+    public void AddFuel(){
+        fuel=fuel+1;
+    }
+
     public void AddStick()
     {
         sticks = sticks+1f;
         stickUI.UpdateStickSum();
 
     }
-    
+
+    public void AddFuelToGenerator()
+    {
+        if (fuel>0)
+        {
+            fuel = fuel-1;
+            fuelOnGenerator = fuelOnGenerator+1;
+        }
+    }    
+
     public void SpendStickToFire()
     {
         if (sticks > 0)
@@ -100,6 +117,7 @@ public class PlayerInventory : MonoBehaviour
             {
                 interactable.CreateFire();
             }
+            stickUI.UpdateStickSum();
         }
         else
         {
@@ -114,6 +132,7 @@ public class PlayerInventory : MonoBehaviour
             sticksOnFire = sticksOnFire - priceStick;
         }
     }
+
 
 
 

@@ -22,6 +22,9 @@ public class ProcedualGeneratorRooms : MonoBehaviour
     [Header("2nd floor 'Forest' ")]
     [SerializeField] private GameObject forestMap;
 
+    [Header("3rd floor 'DangerForest' ")]
+    [SerializeField] private GameObject dangerMap;
+
     [Header(" 'The Fog Settings' ")]
     public bool isTheFog = false;
     public float theFogStart = 2f;    
@@ -34,8 +37,8 @@ public class ProcedualGeneratorRooms : MonoBehaviour
     {
         GenerateRooms();
         RenderSettings.fog = isTheFog; // off/on theFog
-        SpawnFloorTwo();
     }
+
 
     public void GenerateRooms()
     {
@@ -188,6 +191,13 @@ public class ProcedualGeneratorRooms : MonoBehaviour
         ClearAllRooms();
         forestMap.SetActive(true);
         EnterTheFogSettings();
-        //itemGenerator.ClearAllItems();
+        itemGenerator.ClearAllItems();
+        itemGenerator.RemoveFloorItems(1);
     }
+    public void SpawnFloorThree(){
+        Destroy(forestMap);
+        dangerMap.SetActive(true);
+        
+    }
+
 }

@@ -15,7 +15,10 @@ public class Interactable : MonoBehaviour
         LightSwitch,
         Stick,
         Fire,
-        TrashDoor
+        TrashDoor,
+        LeverFloor,
+        Fuel,
+        Generator,
     }
     
     public ItemType itemType = ItemType.Item;
@@ -25,6 +28,7 @@ public class Interactable : MonoBehaviour
     public UnityEvent onInteract; // Событие при взаимодействии
     public PlayerInventory playerInventory;
     public StickUI stickUI;
+    public ProcedualGeneratorRooms procedualGeneratorRooms;
     
     // Для двери
     public bool isLocked = true;
@@ -46,6 +50,7 @@ public class Interactable : MonoBehaviour
 
     public GameObject[] sticksArray; 
     
+    private int floor = 1;
 
     private bool isOpenDoorBake = false;
     private bool isOpenTrashDoor = false;
@@ -129,7 +134,17 @@ public class Interactable : MonoBehaviour
             case ItemType.TrashDoor:
                 ToggleTrashDoor();
                 break;
-
+            case ItemType.LeverFloor:
+                ToggleLightSwitch();
+                CreateNextFloor();
+                break;
+            case ItemType.Fuel:
+                Destroy(gameObject);
+                playerInventory.AddFuel();
+                break;
+            case ItemType.Generator:
+                playerInventory.AddFuelToGenerator();
+                break;
             default:
                 onInteract?.Invoke();
                 break;
@@ -350,5 +365,19 @@ public class Interactable : MonoBehaviour
         else sticksArray[9].SetActive(false);
 
 
+    }
+
+    public void CreateNextFloor()
+    {
+
+        if(fire.activeSelf && floor == 1){
+            floor = floor+1;
+            procedualGeneratorRooms.SpawnFloorTwo();
+        }
+        if(playerInventory.fuelOnGenerator >= 5 && floor == 2){
+            floor = floor+1;
+            procedualGeneratorRooms.SpawnFloorThree();
+        }
+        else return;
     }
 }
