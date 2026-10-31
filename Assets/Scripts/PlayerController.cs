@@ -71,7 +71,10 @@ public class PlayerController : MonoBehaviour
         _velocity.y += gravity * Time.deltaTime;
         movement.y = _velocity.y;
         
-        _characterController.Move(movement * Time.deltaTime);
+        if (_characterController.enabled)
+        {
+            _characterController.Move(movement * Time.deltaTime);
+        }
     }
     
     private void HandleStamina(bool isGrounded)
