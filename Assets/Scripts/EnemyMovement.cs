@@ -18,6 +18,7 @@ public class EnemyMovement : MonoBehaviour
 
     private Vector3 patrolTarget;
     private float waitTimer = 0f;
+    public AudioSource footstepSource;
 
     void Start()
     {
@@ -63,13 +64,26 @@ public class EnemyMovement : MonoBehaviour
             if (anim != null) anim.speed = 1f; 
         }
 
-        // 4. Включаем анимацию ходьбы, если он реально движется
+        // 4. Включаем анимацию ходьбы и звук шагов, если он реально движется
+        bool isMoving = agent.velocity.magnitude > 0.1f && !agent.isStopped;
+
         if (anim != null && anim.speed > 0f)
         {
-            bool isMoving = agent.velocity.magnitude > 0.1f && !agent.isStopped;
             anim.SetBool("isWalking", isMoving);
         }
 
+        // --- ДОБАВЛЕНО: Логика шагов ---
+        if (footstepSource != null)
+        {
+            if (isMoving && !footstepSource.isPlaying) 
+            {
+                footstepSource.Play();
+            }
+            else if (!isMoving && footstepSource.isPlaying) 
+            {
+                footstepSource.Stop(); // Заглушаем шаги, если он остановился (замер или дошел до точки)
+            }
+        }
         // 5. Смерть игрока
         if (distanceToPlayer < killDistance)
         {

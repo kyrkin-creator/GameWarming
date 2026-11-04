@@ -21,6 +21,7 @@ public class Interactable : MonoBehaviour
         Fuel,
         Generator,
         TV,
+        Paper,
     }
     
     public ItemType itemType = ItemType.Item;
@@ -29,6 +30,7 @@ public class Interactable : MonoBehaviour
     
     public UnityEvent onInteract; // Событие при взаимодействии
     public PlayerInventory playerInventory;
+    public PlayerController _playerController;
     public StickUI stickUI;
     public ProcedualGeneratorRooms procedualGeneratorRooms;
     
@@ -49,6 +51,7 @@ public class Interactable : MonoBehaviour
     public GameObject smoke;
     public GameObject houseDoor;
     public GameObject UIthnks;
+    public GameObject UIWannaPlay;
 
     public GameObject[] sticksArray; 
     
@@ -153,6 +156,9 @@ public class Interactable : MonoBehaviour
                 // ИЗМЕНЕНО: Запускаем корутину затемнения
                 StartCoroutine(FadeAndShowUI());
                 break;
+            case ItemType.Paper:
+                TogglePaper();
+                break;
             default:
                 onInteract?.Invoke();
                 break;
@@ -248,6 +254,27 @@ public class Interactable : MonoBehaviour
         {
             LightSwitchAnimator.SetBool("isSwitchOn", false);
             SetAllLightsActive(false);
+        }
+    }
+    public void TogglePaper()
+    {
+        if (UIWannaPlay.activeSelf)
+        {
+            UIWannaPlay.SetActive(false);
+            
+            // ВКЛЮЧАЕМ управление обратно
+            if (_playerController != null) _playerController.enabled = true;
+            
+            // Прячем курсор и фиксируем его в центре экрана
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+        else
+        {
+            UIWannaPlay.SetActive(true);
+            
+            // ОТКЛЮЧАЕМ управление (игрок замирает, камера не крутится)
+            if (_playerController != null) _playerController.enabled = false;
         }
     }
     private void SetAllLightsActive(bool isActive)

@@ -35,6 +35,7 @@ public class FreezeSystem : MonoBehaviour
     [SerializeField] private Image _freezeOverlayImage;             // Затемнение экрана
     [SerializeField] private Animator _freezeAnimator;              // Аниматор игрока
     [SerializeField] private string _freezeParameter = "freezeLevel"; // Параметр в аниматоре
+    [SerializeField] private GameObject _particleSystem;
     
     [Header("=== СОБЫТИЯ ===")]
     [Header("Unity Events")]
@@ -128,7 +129,6 @@ public class FreezeSystem : MonoBehaviour
 
     private void Update()
     {
-        if (_isDead) return;
 
         // Проверяем, находится ли игрок в зоне тепла
         _isInHeatZone = CheckIfInHeatZone();
@@ -188,10 +188,12 @@ public class FreezeSystem : MonoBehaviour
             {
                 Debug.Log("🔥 ВОШЕЛ В ЗОНУ ТЕПЛА! Начинаем отогреваться.");
                 onThawStart?.Invoke();
+                _particleSystem.SetActive(false);
             }
             else
             {
                 Debug.Log("❄️ ПОКИНУЛ ЗОНУ ТЕПЛА! Начинаем замерзать.");
+                _particleSystem.SetActive(true);
                 onFreezeStart?.Invoke();
             }
             _wasInHeatZone = _isInHeatZone;

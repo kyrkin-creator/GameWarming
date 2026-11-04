@@ -13,6 +13,9 @@ public class GameManager : MonoBehaviour
     public CanvasGroup fadeScreen;
     public CinemachineCamera CinemachineCam;
 
+    public AudioSource windAudio;
+    public AudioSource roomAudio;
+
     [Header("Скример")]
     public RawImage jumpscareImage;     
     public AudioSource jumpscareAudio; 
@@ -107,6 +110,10 @@ public class GameManager : MonoBehaviour
         GameObject.Find("SnowEffect").SetActive(false);
         CinemachineCam.Lens.FarClipPlane = 50f;
 
+        // --- ДОБАВЛЕНО: Переключение музыки ---
+        if (windAudio != null) windAudio.Stop(); // Выключаем вьюгу
+        
+
         // 3. Ждем полсекунды в темноте
         yield return new WaitForSeconds(0.5f);
 
@@ -116,12 +123,17 @@ public class GameManager : MonoBehaviour
         playerTransform.rotation = destination.rotation;
 
         // 5. Ждем еще чуть-чуть, чтобы камера успела обновиться
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(4f);
 
         // 6. Включаем управление обратно
         if (playerTransform.GetComponent<CharacterController>() != null)
             playerTransform.GetComponent<CharacterController>().enabled = true;
-
+            
+        if (roomAudio != null) 
+        {
+            roomAudio.gameObject.SetActive(true); // Включаем объект (если он выключен)
+            roomAudio.Play(); // Запускаем звук комнаты
+        }
         // 7. Плавно проявляем экран
         float timer = 0f;
         while (timer < 1f)
