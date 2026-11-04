@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using Unity.Cinemachine;
 
 public class GameManager : MonoBehaviour
 {
@@ -10,6 +11,7 @@ public class GameManager : MonoBehaviour
     public Transform bedSpawnPoint;
     public GameObject player;
     public CanvasGroup fadeScreen;
+    public CinemachineCamera CinemachineCam;
 
     [Header("Скример")]
     public RawImage jumpscareImage;     
@@ -86,5 +88,48 @@ public class GameManager : MonoBehaviour
         // 9. Кулдаун перед тем, как игрок снова станет уязвим
         yield return new WaitForSeconds(cooldownTime);
         isDead = false; 
+    }
+    public void TransitionToRoom(Transform destination, Transform playerTransform)
+    {
+        StartCoroutine(TransitionRoutine(destination, playerTransform));
+    }
+
+    IEnumerator TransitionRoutine(Transform destination, Transform playerTransform)
+    {
+        // 1. Мгновенно затемняем экран (или плавно, как хочешь)
+        if (fadeScreen != null) fadeScreen.alpha = 1f;
+
+        // 2. Отключаем управление, чтобы игрок не улетел
+        if (playerTransform.GetComponent<CharacterController>() != null)
+            playerTransform.GetComponent<CharacterController>().enabled = false;
+
+        RenderSettings.fog = false;
+        GameObject.Find("SnowEffect").SetActive(false);
+        CinemachineCam.Lens.FarClipPlane = 50f;
+
+        // 3. Ждем полсекунды в темноте
+        yield return new WaitForSeconds(0.5f);
+
+        // 4. Телепортируем игрока
+        playerTransform.position = destination.position;
+        // Если нужно, чтобы он смотрел в определенную сторону:
+        playerTransform.rotation = destination.rotation;
+
+        // 5. Ждем еще чуть-чуть, чтобы камера успела обновиться
+        yield return new WaitForSeconds(0.5f);
+
+        // 6. Включаем управление обратно
+        if (playerTransform.GetComponent<CharacterController>() != null)
+            playerTransform.GetComponent<CharacterController>().enabled = true;
+
+        // 7. Плавно проявляем экран
+        float timer = 0f;
+        while (timer < 1f)
+        {
+            timer += Time.deltaTime;
+            if (fadeScreen != null) fadeScreen.alpha = Mathf.Lerp(1f, 0f, timer / 1f);
+            yield return null;
+        }
+        if (fadeScreen != null) fadeScreen.alpha = 0f;
     }
 }

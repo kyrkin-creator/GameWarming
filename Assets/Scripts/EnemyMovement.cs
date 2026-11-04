@@ -4,9 +4,10 @@ using UnityEngine.AI;
 public class EnemyMovement : MonoBehaviour
 {
     public Transform player;
+    public float freezeDistance = 15f;
     public float killDistance = 1.5f;
-    public float detectionRange = 15f; // Дистанция, с которой он тебя замечает
-    public float patrolRadius = 20f;   // Радиус, в котором он бродит
+    public float detectionRange = 15f; 
+    public float patrolRadius = 20f;
     
     private NavMeshAgent agent;
     private Camera playerCam;
@@ -48,14 +49,16 @@ public class EnemyMovement : MonoBehaviour
             ChaseLogic(distanceToPlayer);
         }
 
-        // 3. ЛОГИКА ЗАМИРАНИЯ (замораживаем анимацию и движение, если игрок смотрит)
-        if (isVisible)
+        // --- ЛОГИКА ЗАМИРАНИЯ (Плачущий ангел) ---
+        // Он замирает, ТОЛЬКО если игрок смотрит на него И он находится в радиусе freezeDistance
+        if (isVisible && distanceToPlayer <= freezeDistance)
         {
             agent.isStopped = true; 
             if (anim != null) anim.speed = 0f; 
         }
         else
         {
+            // Во всех остальных случаях (отвернулся или он далеко) он идет
             agent.isStopped = false; 
             if (anim != null) anim.speed = 1f; 
         }

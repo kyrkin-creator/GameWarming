@@ -1,4 +1,5 @@
 using System;
+using System.Collections; // ДОБАВЛЕНО для работы корутин
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -19,6 +20,7 @@ public class Interactable : MonoBehaviour
         LeverFloor,
         Fuel,
         Generator,
+        TV,
     }
     
     public ItemType itemType = ItemType.Item;
@@ -35,7 +37,6 @@ public class Interactable : MonoBehaviour
     public string requiredKeyID = "";
     
     public Animator doorAnimator;
-
     public Animator doorBakeAnimator;
     public Animator LightSwitchAnimator;
     public Animator trashDoorAnimator;
@@ -47,6 +48,7 @@ public class Interactable : MonoBehaviour
     public GameObject fire;
     public GameObject smoke;
     public GameObject houseDoor;
+    public GameObject UIthnks;
 
     public GameObject[] sticksArray; 
     
@@ -60,7 +62,9 @@ public class Interactable : MonoBehaviour
     public string openText = "Open the door";
     public string closeText = "Close the door";
 
-    
+    [Header("TV Cutscene Fade")] // ДОБАВЛЕНО для затемнения
+    public CanvasGroup fadeScreen; // Перетащи сюда свой черный экран (UI Image с CanvasGroup)
+    public float fadeDuration = 1.5f; // Время затемнения
     
     void Start()
     {
@@ -145,12 +149,42 @@ public class Interactable : MonoBehaviour
             case ItemType.Generator:
                 playerInventory.AddFuelToGenerator();
                 break;
+            case ItemType.TV:
+                // ИЗМЕНЕНО: Запускаем корутину затемнения
+                StartCoroutine(FadeAndShowUI());
+                break;
             default:
                 onInteract?.Invoke();
                 break;
         }
     }
     
+    // ДОБАВЛЕНО: Корутина для затемнения
+    IEnumerator FadeAndShowUI()
+    {
+        // 1. Затемняем экран
+        if (fadeScreen != null)
+        {
+            float timer = 0f;
+            while (timer < fadeDuration)
+            {
+                timer += Time.deltaTime;
+                fadeScreen.alpha = Mathf.Lerp(0f, 1f, timer / fadeDuration);
+                yield return null;
+            }
+            fadeScreen.alpha = 1f; // Фиксируем полную черноту
+        }
+
+        // 2. Ждем полсекунды в темноте (чтобы был эффект)
+        yield return new WaitForSeconds(0.5f);
+
+        // 3. Включаем твой канвас
+        if (UIthnks != null)
+        {
+            UIthnks.SetActive(true);
+        }
+    }
+
     public void ToggleDoor()
     {
         if (isOpen && !canClose) return; // Нельзя закрыть если запрещено
